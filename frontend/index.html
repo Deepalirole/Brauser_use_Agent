@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sheet Agent Runner</title>
+    <style>
+        :root {
+            --bg: #f3efe6;
+            --panel: #fffdf8;
+            --ink: #1d2b22;
+            --muted: #5c6a62;
+            --accent: #0f766e;
+            --accent-dark: #115e59;
+            --line: #d7d1c6;
+            --error: #b42318;
+            --success: #166534;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Georgia, "Times New Roman", serif;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at top left, rgba(15, 118, 110, 0.16), transparent 28%),
+                radial-gradient(circle at bottom right, rgba(180, 131, 64, 0.18), transparent 30%),
+                linear-gradient(135deg, #f3efe6, #ebe4d7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .card {
+            width: 100%;
+            max-width: 720px;
+            background: var(--panel);
+            border: 1px solid rgba(29, 43, 34, 0.08);
+            border-radius: 24px;
+            box-shadow: 0 24px 80px rgba(29, 43, 34, 0.12);
+            overflow: hidden;
+        }
+
+        .hero {
+            padding: 28px 28px 14px;
+            border-bottom: 1px solid rgba(29, 43, 34, 0.08);
+            background: linear-gradient(180deg, rgba(15, 118, 110, 0.08), rgba(255, 253, 248, 0));
+        }
+
+        .eyebrow {
+            margin: 0 0 10px;
+            color: var(--accent-dark);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(2rem, 4vw, 3.2rem);
+            line-height: 1;
+        }
+
+        .subtitle {
+            margin: 14px 0 0;
+            max-width: 56ch;
+            color: var(--muted);
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        form {
+            padding: 28px;
+            display: grid;
+            gap: 18px;
+        }
+
+        .field {
+            display: grid;
+            gap: 8px;
+        }
+
+        label {
+            font-size: 0.92rem;
+            font-weight: 700;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 14px 16px;
+            font: inherit;
+            color: var(--ink);
+            background: #fff;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        input:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.12);
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .help {
+            color: var(--muted);
+            font-size: 0.88rem;
+            line-height: 1.5;
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            border: none;
+            border-radius: 999px;
+            background: var(--accent);
+            color: white;
+            padding: 14px 22px;
+            font: inherit;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.18s ease, background 0.18s ease;
+        }
+
+        button:hover {
+            background: var(--accent-dark);
+            transform: translateY(-1px);
+        }
+
+        button:disabled {
+            cursor: wait;
+            transform: none;
+            opacity: 0.72;
+        }
+
+        .status {
+            min-height: 56px;
+            padding: 16px 18px;
+            border-top: 1px solid rgba(29, 43, 34, 0.08);
+            background: rgba(29, 43, 34, 0.02);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            word-break: break-word;
+        }
+
+        .status.error {
+            color: var(--error);
+        }
+
+        .status.success {
+            color: var(--success);
+        }
+
+        .status.pending {
+            color: var(--accent-dark);
+        }
+
+        code {
+            font-family: "Courier New", monospace;
+            font-size: 0.92em;
+        }
+
+        @media (max-width: 640px) {
+            .hero,
+            form {
+                padding: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="card">
+        <section class="hero">
+            <p class="eyebrow">Browser-Use Frontend</p>
+            <h1>Run a browser-use task</h1>
+            <p class="subtitle">
+                Trigger the agent to update a Google Sheet, run a custom web task, or execute a structured workflow.
+                The frontend does not need your Google credentials; the backend keeps those on the server.
+            </p>
+        </section>
+
+        <form id="agentForm">
+            <div class="field">
+                <label for="apiUrl">Backend API URL</label>
+                <input id="apiUrl" name="apiUrl" type="url" value="http://127.0.0.1:8002/run" required>
+                <div class="help">Use your deployed agent endpoint here when you move this page to Vercel.</div>
+            </div>
+
+            <div class="field">
+                <label for="taskType">Task Type</label>
+                <select id="taskType" name="taskType">
+                    <option value="sheet" selected>Google Sheet update</option>
+                    <option value="custom">Custom web task</option>
+                    <option value="workflow">Workflow JSON</option>
+                </select>
+                <div class="help">Use custom tasks for any browser automation like form fills or doc edits.</div>
+            </div>
+
+            <div id="sheetFields">
+                <div class="field">
+                    <label for="sheetUrl">Google Sheet Link</label>
+                    <input
+                        id="sheetUrl"
+                        name="sheetUrl"
+                        type="url"
+                        placeholder="https://docs.google.com/spreadsheets/d/..."
+                        required
+                    >
+                    <div class="help">The backend extracts the sheet ID directly from the pasted link.</div>
+                </div>
+
+                <div class="field">
+                    <label for="value">Value to write</label>
+                    <textarea
+                        id="value"
+                        name="value"
+                        placeholder="Example: New status update"
+                        required
+                    ></textarea>
+                </div>
+            </div>
+
+            <div id="workflowFields" style="display: none;">
+                <div class="field">
+                    <label for="workflowJson">Workflow JSON</label>
+                    <textarea
+                        id="workflowJson"
+                        name="workflowJson"
+                        placeholder='{"title": "My workflow", "starting_url": "https://example.com", "steps": []}'
+                    >{
+  "run_id": "b7c2f9d1-3e6a-4a91-8f21-6c9e2d4b8abc",
+  "title": "Search for Claude Design Usage on Google",
+  "starting_url": "https://www.google.com",
+  "auth_required": false,
+  "auth_hint": "",
+  "steps": [
+    {
+      "id": 1,
+      "title": "Open Google homepage",
+      "url_hint": "https://www.google.com",
+      "intents": [
+        {
+          "action": "observe",
+          "target": "search bar",
+          "value": null,
+          "context": "Google homepage main search input"
+        }
+      ],
+      "verification": "Google search bar is visible on the homepage."
+    },
+    {
+      "id": 2,
+      "title": "Enter search query",
+      "url_hint": null,
+      "intents": [
+        {
+          "action": "type",
+          "target": "search bar",
+          "value": "how to use claude design",
+          "context": "Google search input field"
+        }
+      ],
+      "verification": "The query 'how to use claude design' appears in the search bar."
+    },
+    {
+      "id": 3,
+      "title": "Execute search",
+      "url_hint": null,
+      "intents": [
+        {
+          "action": "press",
+          "target": "Enter key",
+          "value": null,
+          "context": "keyboard input to trigger search"
+        }
+      ],
+      "verification": "Search results page is displayed with relevant links."
+    }
+  ]
+}
+                    </textarea>
+                    <div class="help">Paste the workflow JSON you want to execute.</div>
+                </div>
+            </div>
+
+            <div id="customFields" style="display: none;">
+                <div class="field">
+                    <label for="taskPrompt">Custom Task Prompt</label>
+                    <textarea
+                        id="taskPrompt"
+                        name="taskPrompt"
+                        placeholder="Example: Open the contact form, fill name/email, and submit."
+                    ></textarea>
+                    <div class="help">Describe exactly what you want the agent to do.</div>
+                </div>
+
+                <div class="field">
+                    <label for="taskUrl">Target URL (optional)</label>
+                    <input
+                        id="taskUrl"
+                        name="taskUrl"
+                        type="url"
+                        placeholder="https://example.com/form"
+                    >
+                    <div class="help">If provided, the agent will navigate here first.</div>
+                </div>
+            </div>
+
+            <div class="actions">
+                <button id="runBtn" type="submit">Run Browser Agent</button>
+            </div>
+        </form>
+
+        <section id="status" class="status">Waiting for input.</section>
+    </main>
+
+    <script>
+        const form = document.getElementById("agentForm");
+        const runBtn = document.getElementById("runBtn");
+        const statusEl = document.getElementById("status");
+        const apiUrlInput = document.getElementById("apiUrl");
+        const taskTypeSelect = document.getElementById("taskType");
+        const sheetFields = document.getElementById("sheetFields");
+        const customFields = document.getElementById("customFields");
+        const taskPromptInput = document.getElementById("taskPrompt");
+        const taskUrlInput = document.getElementById("taskUrl");
+        const sheetUrlInput = document.getElementById("sheetUrl");
+        const sheetValueInput = document.getElementById("value");
+        const workflowFields = document.getElementById("workflowFields");
+        const workflowJsonInput = document.getElementById("workflowJson");
+
+        function setStatus(message, tone) {
+            statusEl.className = "status" + (tone ? " " + tone : "");
+            statusEl.textContent = message;
+        }
+
+        function getValidatedApiUrl(rawUrl) {
+            let parsed;
+            try {
+                parsed = new URL(rawUrl);
+            } catch (_error) {
+                throw new Error("Backend API URL is not a valid URL.");
+            }
+
+            if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+                throw new Error("Backend API URL must start with http:// or https://");
+            }
+
+            if (parsed.hostname.includes(" ")) {
+                throw new Error("Backend API URL hostname cannot contain spaces.");
+            }
+
+            return parsed.toString();
+        }
+
+        function defaultApiForType(taskType) {
+            const base = window.location.origin;
+            if (taskType === "custom") {
+                return `${base}/run-task`;
+            }
+            if (taskType === "workflow") {
+                return `${base}/run-workflow`;
+            }
+            return `${base}/run`;
+        }
+
+        function syncTaskMode() {
+            const taskType = taskTypeSelect.value;
+            const isCustom = taskType === "custom";
+            const isWorkflow = taskType === "workflow";
+            const isSheet = !isCustom && !isWorkflow;
+            sheetFields.style.display = isSheet ? "grid" : "none";
+            customFields.style.display = isCustom ? "grid" : "none";
+            workflowFields.style.display = isWorkflow ? "grid" : "none";
+            sheetUrlInput.required = isSheet;
+            sheetValueInput.required = isSheet;
+            taskPromptInput.required = isCustom;
+            workflowJsonInput.required = isWorkflow;
+            if (window.location.protocol !== "file:") {
+                apiUrlInput.value = defaultApiForType(taskType);
+            }
+        }
+
+        if (window.location.protocol === "file:") {
+            setStatus(
+                "You're opening this page via file://. Please open http://127.0.0.1:8002/ (served by FastAPI) or serve the frontend over HTTP. Browser security restrictions can block requests from file:// pages.",
+                "error"
+            );
+        } else {
+            if (!apiUrlInput.value || apiUrlInput.value === "http://127.0.0.1:8002/run") {
+                apiUrlInput.value = defaultApiForType(taskTypeSelect.value);
+            }
+        }
+
+        taskTypeSelect.addEventListener("change", syncTaskMode);
+        syncTaskMode();
+
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            const apiUrlRaw = apiUrlInput.value.trim();
+            const taskType = taskTypeSelect.value;
+            const sheetUrl = document.getElementById("sheetUrl").value.trim();
+            const value = document.getElementById("value").value.trim();
+            const taskPrompt = taskPromptInput.value.trim();
+            const taskUrl = taskUrlInput.value.trim();
+            const workflowJson = workflowJsonInput.value.trim();
+
+            if (!apiUrlRaw) {
+                setStatus("Please fill in the backend URL.", "error");
+                return;
+            }
+
+            if (taskType === "sheet" && (!sheetUrl || !value)) {
+                setStatus("Please fill in the sheet link and value.", "error");
+                return;
+            }
+
+            if (taskType === "custom" && !taskPrompt) {
+                setStatus("Please describe the custom task you want to run.", "error");
+                return;
+            }
+
+            if (taskType === "workflow" && !workflowJson) {
+                setStatus("Please paste the workflow JSON to run.", "error");
+                return;
+            }
+
+            let apiUrl;
+            try {
+                apiUrl = getValidatedApiUrl(apiUrlRaw);
+            } catch (error) {
+                setStatus(`Run failed: ${error.message}`, "error");
+                return;
+            }
+
+            runBtn.disabled = true;
+            setStatus("Starting browser-use run. This can take a while if login or sheet loading is required.", "pending");
+
+            try {
+                let payload;
+                if (taskType === "custom") {
+                    payload = {
+                        task: taskPrompt,
+                        url: taskUrl || null,
+                    };
+                } else if (taskType === "workflow") {
+                    try {
+                        payload = JSON.parse(workflowJson);
+                    } catch (_error) {
+                        setStatus("Workflow JSON is invalid. Please fix the JSON and try again.", "error");
+                        runBtn.disabled = false;
+                        return;
+                    }
+                } else {
+                    payload = {
+                        sheet_url: sheetUrl,
+                        value: value,
+                    };
+                }
+
+                const response = await fetch(apiUrl, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(payload),
+                });
+
+                const responseText = await response.text();
+                let parsed;
+
+                try {
+                    parsed = JSON.parse(responseText);
+                } catch (_error) {
+                    parsed = { raw: responseText };
+                }
+
+                if (!response.ok) {
+                    const errorMessage = parsed.detail || parsed.message || parsed.raw || `Request failed with status ${response.status}`;
+                    throw new Error(errorMessage);
+                }
+
+                setStatus(
+                    "Run completed. The backend accepted the request successfully." +
+                    (parsed.result ? " Result summary returned by the agent." : ""),
+                    "success"
+                );
+            } catch (error) {
+                setStatus(`Run failed: ${error.message}`, "error");
+            } finally {
+                runBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

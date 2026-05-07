@@ -1,0 +1,7 @@
+browser-use
+langchain-nvidia-ai-endpoints
+playwright
+fastapi
+uvicorn[standard]
+python-dotenv
+pydantic

@@ -1,0 +1,16 @@
+{
+  "name": "browser-agent-trigger",
+  "version": "1.0.0",
+  "description": "Trigger.dev project for browser-use agent",
+  "scripts": {
+    "dev": "npx trigger.dev@4.4.5 dev",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@trigger.dev/sdk": "4.4.5"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0"
+  }
+}

@@ -1,0 +1,22 @@
+# Node
+node_modules/
+dist/
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+env/
+venv/
+.env
+
+# Browser Agent
+*.png
+*.webm
+*.mp4
+playwright-report/
+test-results/
+
+# Trigger.dev
+.trigger/

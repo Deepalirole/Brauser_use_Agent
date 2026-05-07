@@ -1,4 +1,4 @@
-# Browser-Use Agent Integration
+# Brauser_use_Agent
 
 This project implements a full-stack automation flow where clicking a button on a simple webpage triggers a Trigger.dev job, which calls a Python FastAPI server running a `browser-use` agent to automate Google Sheets entry via a real browser UI.
 
